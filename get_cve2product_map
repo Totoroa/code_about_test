@@ -1,0 +1,37 @@
+"""buile a map about CVE:product+version"""
+import os
+import json
+import re
+
+
+pattern = re.compile(r"CVE-\d+-\d+")
+base_path = r"F:\project\vuddy-master\vulnDBGen\data\CVEXML"
+#all_dict = {}
+base_dict = []
+for f in os.listdir(base_path):
+    cur_path = os.path.join(base_path, f)
+    with open(cur_path, "r") as ff:
+        temp = json.load(ff)
+        base_dict.extend(temp["CVE_Items"])
+        #all_dict.update(temp)
+#base_dict = all_dict["CVE_Items"]
+cve_product = {}
+for dicts in base_dict:
+    cve_id = dicts["cve"]["CVE_data_meta"]["ID"]
+    product = []
+    for cpes_dict in dicts["configurations"]["nodes"]:
+        if "cpe_match" in cpes_dict.keys():
+            for i in cpes_dict["cpe_match"]:
+                if i["vulnerable"]:
+                    product.append(i)
+        else:
+            for i in cpes_dict["children"]:
+                for j in i["cpe_match"]:
+                    if j["vulnerable"]:
+                        product.append(j)
+
+    cve_product[cve_id] = product
+    
+with open(r"E:/cve2product.json", "w") as fff:
+    json.dump(cve_product, fff,encoding="utf-8")
+print "Over.."
